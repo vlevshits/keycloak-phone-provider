@@ -1,16 +1,27 @@
-name: 'build-test'
+name: Build
+
 on:
-  push
+  push:
+  pull_request:
 
 jobs:
-  build-and-liveness-check:
+  build:
+    name: build
     runs-on: ubuntu-latest
-    steps: 
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
+    env:
+      MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
-          distribution: 'temurin' 
-          java-version: '17'
-      - shell: bash
-        run: cd examples && ./docker-build.sh test
-      - run: cd examples && docker compose --verbose up --build --wait
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+      - name: Build
+        run: >
+          mvn $MAVEN_CLI_OPTS
+          dependency:go-offline
+          clean verify
