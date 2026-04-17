@@ -10,22 +10,23 @@ import cc.coopersoft.keycloak.phone.credential.PhoneOtpCredentialProviderFactory
 import cc.coopersoft.keycloak.phone.providers.constants.TokenCodeType;
 import cc.coopersoft.keycloak.phone.providers.spi.PhoneProvider;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpResponse;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.CredentialValidator;
-import org.keycloak.common.util.ServerCookie;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Cookie;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
@@ -92,11 +93,9 @@ public class SmsOtpMfaAuthenticator implements Authenticator, CredentialValidato
   }
 
   public void addCookie(AuthenticationFlowContext context, String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
-    HttpResponse response = context.getSession().getContext().getContextObject(HttpResponse.class);
-    StringBuilder cookieBuf = new StringBuilder();
-    ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly, null);
-    String cookie = cookieBuf.toString();
-    response.getOutputHeaders().add(HttpHeaders.SET_COOKIE, cookie);
+    org.keycloak.http.HttpResponse response = context.getSession().getContext().getHttpResponse();
+    NewCookie cookie = new NewCookie(name, value, path, domain, 1, comment, maxAge, null, secure, httpOnly);
+    response.setCookieIfAbsent(cookie);
   }
 
   @Override
