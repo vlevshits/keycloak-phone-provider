@@ -1,6 +1,8 @@
 package cc.coopersoft.keycloak.phone.authentication.forms;
 
-import okhttp3.HttpUrl;
+import jakarta.ws.rs.core.UriBuilder;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
@@ -118,12 +120,14 @@ public class RegistrationRedirectParametersReader implements FormActionFactory, 
       return;
     }
 
-    HttpUrl url = HttpUrl.parse(redirectUri);
-    if (url == null) {
-      logger.error("redirectUri is null");
+    URI uri;
+    try {
+      uri = new URI(redirectUri);
+    } catch (URISyntaxException e) {
+      logger.error("redirectUri is invalid", e);
       return;
     }
-    //url.queryParameterNames().forEach(s -> logger.info("redirect param name ->" + s));
+
     UserModel user = context.getUser();
     AuthenticatorConfigModel authenticatorConfig = context.getAuthenticatorConfig();
 
@@ -154,10 +158,23 @@ public class RegistrationRedirectParametersReader implements FormActionFactory, 
       return;
     }
 
-    url.queryParameterNames()
-        .stream()
-        .filter(finalParamNames::contains)
-        .forEach(v -> user.setAttribute(v, url.queryParameterValues(v)));
+    String query = uri.getQuery();
+    if (query != null) {
+      String[] queryParams = query.split("&");
+      Map<String, List<String>> queryParamMap = new HashMap<>();
+      for (String param : queryParams) {
+        String[] keyValue = param.split("=");
+        if (keyValue.length == 2) {
+          queryParamMap.computeIfAbsent(keyValue[0], k -> new ArrayList<>()).add(keyValue[1]);
+        } else if (keyValue.length == 1) {
+          queryParamMap.computeIfAbsent(keyValue[0], k -> new ArrayList<>()).add("");
+        }
+      }
+
+      queryParamMap.keySet().stream()
+          .filter(finalParamNames::contains)
+          .forEach(v -> user.setAttribute(v, queryParamMap.get(v)));
+    }
 
   }
 

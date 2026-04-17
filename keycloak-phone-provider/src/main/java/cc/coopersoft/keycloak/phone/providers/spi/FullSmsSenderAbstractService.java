@@ -19,7 +19,7 @@ public abstract class FullSmsSenderAbstractService implements MessageSenderServi
 
     private final String realmDisplay;
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
 
     @Deprecated
     public FullSmsSenderAbstractService(String realmDisplay) {
